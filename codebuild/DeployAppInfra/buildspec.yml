@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    TF_VAR_auto_approve: "true"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.13
+    commands:
+      - apt-get update && apt-get install -y unzip
+      - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com stable main" > /etc/apt/sources.list.d/hashicorp.list
+      - apt update && apt install terraform -y
+
+  pre_build:
+    commands:
+      - echo "Downloading app.tf from S3"
+      - aws s3 cp s3://$S3_BUCKET/$S3_KEY app.tf
+      - terraform init
+
+  build:
+    commands:
+      - terraform plan
+      - terraform apply -auto-approve
+
+artifacts:
+  files:
+    - '**/*'
