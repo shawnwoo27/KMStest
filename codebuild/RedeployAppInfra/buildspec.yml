@@ -1,19 +1,18 @@
 version: 0.2
 
 phases:
-  install:
-    commands:
-      - apt-get update && apt-get install -y unzip
-      - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com stable main" > /etc/apt/sources.list.d/hashicorp.list
-      - apt update && apt install terraform -y
-
   pre_build:
     commands:
-      - aws s3 cp s3://$S3_BUCKET/$S3_KEY app.tf
+      - echo "Terraform init (S3 backend 연결 중)..."
       - terraform init
 
   build:
     commands:
-      - terraform destroy -auto-approve || echo "destroy failed, continuing"
+      - echo "Terraform taint 실행 중 (EC2 마킹)..."
+      - terraform taint aws_instance.example
+      - echo "Terraform apply 실행 중 (EC2 재생성)..."
       - terraform apply -auto-approve
+
+artifacts:
+  files:
+    - '**/*'
